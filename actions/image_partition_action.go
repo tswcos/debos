@@ -12,6 +12,7 @@ Yaml syntax:
    imagename: image_name
    imagesize: size
    partitiontype: gpt
+   partitionuuid: string
    gpt_gap: offset
    partitions:
      <list of partitions>
@@ -36,6 +37,13 @@ Partition properties are described below.
 
 - mountpoints -- list of mount points for partitions.
 Properties for mount points are described below.
+
+Optional properties:
+
+- partitionuuid -- partition table UUID string. For 'gpt' partition table, 'uuid' should
+be in GUID format (e.g.: '00002222-4444-6666-AAAA-BBBBCCCCFFFF' where each character
+is an hexadecimal digit). For 'msdos' partition table, 'uuid' should be a 32 bits
+hexadecimal number (e.g. '1234ABCD' without any dash separator).
 
 Yaml syntax for partitions:
 
@@ -192,6 +200,7 @@ type ImagePartitionAction struct {
 	ImageName        string
 	ImageSize        string
 	PartitionType    string
+	PartitionUUID    string
 	GptGap           string "gpt_gap"
 	Partitions       []Partition
 	Mountpoints      []Mountpoint
@@ -424,6 +433,15 @@ func (i ImagePartitionAction) Run(context *debos.DebosContext) error {
 	if err != nil {
 		return err
 	}
+
+	if len(i.PartitionUUID) > 0 {
+		command := []string{"sfdisk", "--disk-id", context.Image, i.PartitionUUID}
+		err = debos.Command{}.Run("sfdisk", command...)
+		if err != nil {
+			return err
+		}
+	}
+
 	for idx, _ := range i.Partitions {
 		p := &i.Partitions[idx]
 
@@ -598,6 +616,23 @@ func (i *ImagePartitionAction) Verify(context *debos.DebosContext) error {
 		_, err := units.FromHumanSize(i.GptGap)
 		if err != nil {
 			return fmt.Errorf("Failed to parse GPT offset: %s", i.GptGap)
+		}
+	}
+
+	if len(i.PartitionUUID) > 0 {
+		switch i.PartitionType {
+		case "gpt":
+			_, err := uuid.Parse(i.PartitionUUID)
+			if err != nil {
+				return fmt.Errorf("Incorrect UUID %s", i.PartitionUUID)
+			}
+		case "msdos":
+			_, err := hex.DecodeString(i.PartitionUUID)
+			if err != nil || len(i.PartitionUUID) != 8 {
+				return fmt.Errorf("Incorrect UUID %s, should be 32-bit hexadecimal number", i.PartitionUUID)
+			}
+			// Add 0x prefix
+			i.PartitionUUID = "0x" + i.PartitionUUID
 		}
 	}
 
