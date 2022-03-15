@@ -53,12 +53,14 @@ package actions
 import (
 	"fmt"
 	"io"
+	"log"
 	"os"
 	"path"
 	"strings"
 
 	"github.com/go-debos/debos"
-	ostree "github.com/sjoerdsimons/ostree-go/pkg/otbuiltin"
+//	ostree "github.com/sjoerdsimons/ostree-go/pkg/otbuiltin"
+	ostree "github.com/huongnguyenthi/ostree-go/pkg/otbuiltin"
 )
 
 type OstreeDeployAction struct {
@@ -119,7 +121,8 @@ func (ot *OstreeDeployAction) Run(context *debos.DebosContext) error {
 	}
 
 	repoPath := "file://" + path.Join(context.Artifactdir, ot.Repository)
-
+	log.Printf("ostree-deploy:ot.Repository: %s\n", ot.Repository)
+	log.Printf("ostree-deploy:repoPath: %s\n", repoPath)
 	sysroot := ostree.NewSysroot(context.Rootdir)
 	err := sysroot.InitializeFS()
 	if err != nil {

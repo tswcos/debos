@@ -46,7 +46,8 @@ import (
 	"path"
 
 	"github.com/go-debos/debos"
-	"github.com/sjoerdsimons/ostree-go/pkg/otbuiltin"
+//	"github.com/sjoerdsimons/ostree-go/pkg/otbuiltin"
+	"github.com/huongnguyenthi/ostree-go/pkg/otbuiltin"
 )
 
 type OstreeCommitAction struct {
@@ -84,6 +85,7 @@ func (ot *OstreeCommitAction) Run(context *debos.DebosContext) error {
 	emptyDir(path.Join(context.Rootdir, "dev"))
 
 	repo, err := otbuiltin.OpenRepo(repoPath)
+	log.Printf("repoPath: %s\n", repoPath)
 	if err != nil {
 		return err
 	}
